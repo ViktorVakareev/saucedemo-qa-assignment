@@ -42,6 +42,7 @@ public sealed class PurchaseFlowTests : UiTestBase
             await Expect(inventory.Header.CartBadge).ToHaveTextAsync("2");
 
             cart = await inventory.Header.OpenCartAsync();
+            await Expect(cart.Items).ToHaveCountAsync(2);   // wait for the cart to render before reading it
             Assert.That(await cart.GetItemNamesAsync(), Is.EquivalentTo(new[] { highest.Name, lowest.Name }));
         });
 
@@ -72,6 +73,7 @@ public sealed class PurchaseFlowTests : UiTestBase
         await Step("6. Go to checkout", async () =>
         {
             cart = await inventory.Header.OpenCartAsync();
+            await Expect(cart.Items).ToHaveCountAsync(2);
             Assert.That(await cart.GetItemNamesAsync(), Is.EquivalentTo(new[] { lowest.Name, lastByName }));
             var information = await cart.CheckoutAsync();
             overview = await information.ContinueAsync(customer);
@@ -80,6 +82,7 @@ public sealed class PurchaseFlowTests : UiTestBase
         CheckoutCompletePage complete = null!;
         await Step("7. Check the order summary and finish the order", async () =>
         {
+            await Expect(overview.Items).ToHaveCountAsync(2);
             Assert.That(await overview.GetItemNamesAsync(), Is.EquivalentTo(new[] { lowest.Name, lastByName }));
             var linePrices = await overview.GetItemPricesAsync();
             var itemTotal = await overview.GetItemTotalAsync();

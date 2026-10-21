@@ -19,6 +19,7 @@ public sealed class CheckoutInformationPage(IPage page)
 /// <summary>Checkout step two: "Overview" with item, tax and total amounts.</summary>
 public sealed class CheckoutOverviewPage(IPage page)
 {
+    public ILocator Items => page.Locator("[data-test='inventory-item']");
     private ILocator ItemNames => page.Locator("[data-test='inventory-item-name']");
     private ILocator ItemPrices => page.Locator("[data-test='inventory-item-price']");
 
