@@ -1,9 +1,10 @@
-# Manual test cases for the SauceDemo purchase flow.
-# Written in Gherkin for test design only; they are not wired to a BDD runner.
+# Manual test cases for the SauceDemo purchase flow: the four the assignment asks for.
+# More scenarios, chosen from the exploratory findings, are in AdditionalTestCases.feature.
 #
-# Test data: any user listed on the login page; the password shown there ("secret_sauce" at the time of writing).
-# Expected results where the site gives no specification (marked "assumption") follow common e-commerce practice
-# and would be confirmed with the product owner.
+# Gherkin is used for test design only; these scenarios aren't wired to a BDD runner.
+# Test data: the users and the password published on the login page.
+# Where the site gives no specification, the expected result is marked as an assumption
+# (common e-commerce behaviour) to confirm with the product owner.
 
 Feature: Purchase flow on SauceDemo
   As a shopper

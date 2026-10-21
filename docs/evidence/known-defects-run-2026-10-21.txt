@@ -1,32 +1,40 @@
-Known-defect tests: local run, 2026-10-21 (Windows, .NET 10, Playwright Chromium)
+Known-defect tests: local run, 2026-10-21 (Windows 11, .NET 10, Playwright Chromium)
 Command: dotnet test --filter "TestCategory=KnownDefect"
-Result:  total 2, failed 2 (expected: each test fails until its defect is fixed)
+Result:  total 4, failed 4 (expected: each test fails until its defect is fixed)
+Gate run on the same build: dotnet test --filter "TestCategory!=KnownDefect" -> total 30, passed 30
 Stack traces trimmed; full output and Playwright traces are produced by every run.
 
 ----------------------------------------------------------------------------------
-BUG-001  CheckoutTotalsTests.Item_total_is_shown_as_a_two_decimal_amount   (7.8 s)
+BUG-001  CheckoutTotalsTests.Item_total_is_shown_as_a_two_decimal_amount
 ----------------------------------------------------------------------------------
 Locator expected to have text 'Item total: $59.98'
 But was: 'Item total: $59.980000000000004'
-Call log:
-  - Expect "ToHaveTextAsync" with timeout 5000ms
   - waiting for Locator("[data-test='subtotal-label']")
     14 x locator resolved to <div data-test="subtotal-label" class="summary_subtotal_label">Item total: $59.980000000000004</div>
-       - unexpected value "Item total: $59.980000000000004"
-at SauceDemo.UiTests.Tests.CheckoutTotalsTests.Item_total_is_shown_as_a_two_decimal_amount() CheckoutTotalsTests.cs:line 25
 
 ----------------------------------------------------------------------------------
-O-1      LoginFormTests.Only_the_missing_field_is_marked_as_invalid       (7.5 s)
+O-1      LoginFormTests.Only_the_missing_field_is_marked_as_invalid
 ----------------------------------------------------------------------------------
 Locator expected matching regex '\berror\b'
 But was: 'input_error form_input error'
-Call log:
-  - Expect "ToHaveClassAsync" with timeout 5000ms
   - waiting for Locator("[data-test='username']")
-    14 x locator resolved to <input type="text" id="user-name" data-test="username" aria-label="Username"
-         value="standard_user" placeholder="Username" class="input_error form_input error"/>
-       - unexpected value "input_error form_input error"
-at SauceDemo.UiTests.Tests.LoginFormTests.Only_the_missing_field_is_marked_as_invalid() LoginFormTests.cs:line 73
+    14 x locator resolved to <input ... data-test="username" value="standard_user" class="input_error form_input error"/>
+Note: this is a Not.ToHaveClassAsync assertion; Playwright prints the regex it checked. It fails because the
+valid username field HAS the error class.
 
-Note: Playwright's message reads "expected matching regex" for a Not.ToHaveClassAsync assertion; the
-assertion is "username must NOT have the error class", and it failed because the valid username field has it.
+----------------------------------------------------------------------------------
+O-2      SessionAndCartTests.Checkout_is_not_offered_for_an_empty_cart
+----------------------------------------------------------------------------------
+Locator expected to be disabled
+  - waiting for Locator("[data-test='checkout']")
+    14 x locator resolved to <button id="checkout" data-test="checkout" class="btn btn_action btn_medium checkout_button ">Checkout</button>
+       - unexpected value "enabled"
+
+----------------------------------------------------------------------------------
+O-4      SessionAndCartTests.Next_user_on_the_same_browser_does_not_see_the_previous_users_cart
+----------------------------------------------------------------------------------
+Locator expected to have count '0'
+But was: '1'
+  - waiting for Locator("[data-test='shopping-cart-badge']")
+    14 x locator resolved to 1 element
+       - unexpected value "1"

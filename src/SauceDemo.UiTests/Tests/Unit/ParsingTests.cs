@@ -9,7 +9,7 @@ namespace SauceDemo.UiTests.Tests.Unit;
 public sealed class ParsingTests
 {
     private const string UserHint = "Accepted usernames are:\nstandard_user\nlocked_out_user\nproblem_user\nperformance_glitch_user\n";
-    private const string PasswordHint = "Password for all users:\nsecret_sauce";
+    private const string PasswordHint = "Password for all users:\nexample-password";
 
     [Test]
     public void Reads_user_names_without_the_heading() =>
@@ -18,11 +18,11 @@ public sealed class ParsingTests
 
     [Test]
     public void Reads_the_password_without_the_heading() =>
-        Assert.That(CredentialsParser.ParsePassword(PasswordHint), Is.EqualTo("secret_sauce"));
+        Assert.That(CredentialsParser.ParsePassword(PasswordHint), Is.EqualTo("example-password"));
 
     [Test]
     public void Handles_windows_line_endings_and_spaces() =>
-        Assert.That(CredentialsParser.ParsePassword("Password for all users:\r\n  secret_sauce  \r\n"), Is.EqualTo("secret_sauce"));
+        Assert.That(CredentialsParser.ParsePassword("Password for all users:\r\n  example-password  \r\n"), Is.EqualTo("example-password"));
 
     [Test]
     public void Picks_the_configured_user() =>
@@ -39,7 +39,7 @@ public sealed class ParsingTests
 
     [Test]
     public void Credentials_never_print_the_password() =>
-        Assert.That(new Credentials("standard_user", "secret_sauce").ToString(), Does.Not.Contain("secret_sauce"));
+        Assert.That(new Credentials("standard_user", "example-password").ToString(), Does.Not.Contain("example-password"));
 
     [TestCase("$29.99", 29.99)]
     [TestCase("$7.99", 7.99)]
