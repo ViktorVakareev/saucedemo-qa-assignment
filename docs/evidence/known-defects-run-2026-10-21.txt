@@ -1,0 +1,32 @@
+Known-defect tests: local run, 2026-10-21 (Windows, .NET 10, Playwright Chromium)
+Command: dotnet test --filter "TestCategory=KnownDefect"
+Result:  total 2, failed 2 (expected: each test fails until its defect is fixed)
+Stack traces trimmed; full output and Playwright traces are produced by every run.
+
+----------------------------------------------------------------------------------
+BUG-001  CheckoutTotalsTests.Item_total_is_shown_as_a_two_decimal_amount   (7.8 s)
+----------------------------------------------------------------------------------
+Locator expected to have text 'Item total: $59.98'
+But was: 'Item total: $59.980000000000004'
+Call log:
+  - Expect "ToHaveTextAsync" with timeout 5000ms
+  - waiting for Locator("[data-test='subtotal-label']")
+    14 x locator resolved to <div data-test="subtotal-label" class="summary_subtotal_label">Item total: $59.980000000000004</div>
+       - unexpected value "Item total: $59.980000000000004"
+at SauceDemo.UiTests.Tests.CheckoutTotalsTests.Item_total_is_shown_as_a_two_decimal_amount() CheckoutTotalsTests.cs:line 25
+
+----------------------------------------------------------------------------------
+O-1      LoginFormTests.Only_the_missing_field_is_marked_as_invalid       (7.5 s)
+----------------------------------------------------------------------------------
+Locator expected matching regex '\berror\b'
+But was: 'input_error form_input error'
+Call log:
+  - Expect "ToHaveClassAsync" with timeout 5000ms
+  - waiting for Locator("[data-test='username']")
+    14 x locator resolved to <input type="text" id="user-name" data-test="username" aria-label="Username"
+         value="standard_user" placeholder="Username" class="input_error form_input error"/>
+       - unexpected value "input_error form_input error"
+at SauceDemo.UiTests.Tests.LoginFormTests.Only_the_missing_field_is_marked_as_invalid() LoginFormTests.cs:line 73
+
+Note: Playwright's message reads "expected matching regex" for a Not.ToHaveClassAsync assertion; the
+assertion is "username must NOT have the error class", and it failed because the valid username field has it.
