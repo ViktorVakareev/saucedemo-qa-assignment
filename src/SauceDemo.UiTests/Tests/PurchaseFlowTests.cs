@@ -1,6 +1,6 @@
+using System.Text.RegularExpressions;
 using SauceDemo.UiTests.Config;
 using SauceDemo.UiTests.Infrastructure;
-using SauceDemo.UiTests.Models;
 using SauceDemo.UiTests.Pages;
 
 namespace SauceDemo.UiTests.Tests;
@@ -15,35 +15,34 @@ public sealed class PurchaseFlowTests : UiTestBase
     public async Task Standard_user_completes_an_order_after_changing_the_cart()
     {
         var customer = CheckoutCustomer.Load();
-        InventoryPage inventory = null!;
-        CartPage cart = null!;
-        Product highest = null!, lowest = null!;
-        string lastByName = null!;
 
-        await Step("1-2. Get the standard user's credentials and log in", async () =>
+        var inventory = await Step("1-2. Get the standard user's credentials and log in", async () =>
         {
             var loginPage = await new LoginPage(Page).OpenAsync();
             var credentials = await CredentialsProvider.ResolveAsync(loginPage, Settings);
             TestContext.Progress.WriteLine($"  using {credentials}");
-            inventory = await loginPage.LoginAsync(credentials);
-            await Expect(inventory.Title).ToHaveTextAsync("Products");
+
+            var inventoryPage = await loginPage.LoginAsync(credentials);
+            await Expect(inventoryPage.Title).ToHaveTextAsync("Products");
+            return inventoryPage;
         });
 
-        await Step("3. Add the highest- and the lowest-priced product", async () =>
+        var (highest, lowest, cart) = await Step("3. Add the highest- and the lowest-priced product", async () =>
         {
             var products = await inventory.GetProductsAsync();
-            highest = products.MaxBy(p => p.Price)!;
-            lowest = products.MinBy(p => p.Price)!;
-            Assert.That(highest.Price, Is.GreaterThan(lowest.Price), "the catalogue needs at least two different prices");
-            TestContext.Progress.WriteLine($"  highest: {highest}, lowest: {lowest}");
+            var highestPriced = products.MaxBy(p => p.Price)!;
+            var lowestPriced = products.MinBy(p => p.Price)!;
+            Assert.That(highestPriced.Price, Is.GreaterThan(lowestPriced.Price), "the catalogue needs at least two different prices");
+            TestContext.Progress.WriteLine($"  highest: {highestPriced}, lowest: {lowestPriced}");
 
-            await inventory.AddToCartAsync(highest.Name);
-            await inventory.AddToCartAsync(lowest.Name);
+            await inventory.AddToCartAsync(highestPriced.Name);
+            await inventory.AddToCartAsync(lowestPriced.Name);
             await Expect(inventory.Header.CartBadge).ToHaveTextAsync("2");
 
-            cart = await inventory.Header.OpenCartAsync();
-            await Expect(cart.Items).ToHaveCountAsync(2);   // wait for the cart to render before reading it
-            Assert.That(await cart.GetItemNamesAsync(), Is.EquivalentTo(new[] { highest.Name, lowest.Name }));
+            var cartPage = await inventory.Header.OpenCartAsync();
+            await Expect(cartPage.Items).ToHaveCountAsync(2);   // wait for the cart to render before reading it
+            Assert.That(await cartPage.GetItemNamesAsync(), Is.EquivalentTo(new[] { highestPriced.Name, lowestPriced.Name }));
+            return (highestPriced, lowestPriced, cartPage);
         });
 
         await Step("4. Remove the highest-priced product and check the cart again", async () =>
@@ -54,36 +53,36 @@ public sealed class PurchaseFlowTests : UiTestBase
             await Expect(cart.Header.CartBadge).ToHaveTextAsync("1");
         });
 
-        await Step("5. Sort by Name (A to Z) and add the last product", async () =>
+        var lastByName = await Step("5. Sort by Name (A to Z) and add the last product", async () =>
         {
             inventory = await cart.ContinueShoppingAsync();
             await inventory.SortByAsync(SortOption.NameAToZ);
 
             var names = await inventory.GetProductNamesAsync();
             Assert.That(names, Is.Ordered.Using((IComparer<string>)StringComparer.OrdinalIgnoreCase), "list is sorted A to Z");
-            lastByName = names[^1];
-            Assert.That(lastByName, Is.Not.EqualTo(lowest.Name),
-                "test-data assumption: the last product A-Z isn't already in the cart");
+            var last = names[^1];
+            Assert.That(last, Is.Not.EqualTo(lowest.Name), "test-data assumption: the last product A-Z isn't already in the cart");
 
-            await inventory.AddToCartAsync(lastByName);
+            await inventory.AddToCartAsync(last);
             await Expect(inventory.Header.CartBadge).ToHaveTextAsync("2");
+            return last;
         });
 
-        CheckoutOverviewPage overview = null!;
-        await Step("6. Go to checkout", async () =>
+        var overview = await Step("6. Go to checkout", async () =>
         {
             cart = await inventory.Header.OpenCartAsync();
             await Expect(cart.Items).ToHaveCountAsync(2);
             Assert.That(await cart.GetItemNamesAsync(), Is.EquivalentTo(new[] { lowest.Name, lastByName }));
+
             var information = await cart.CheckoutAsync();
-            overview = await information.ContinueAsync(customer);
+            return await information.ContinueAsync(customer);
         });
 
-        CheckoutCompletePage complete = null!;
-        await Step("7. Check the order summary and finish the order", async () =>
+        var complete = await Step("7. Check the order summary and finish the order", async () =>
         {
             await Expect(overview.Items).ToHaveCountAsync(2);
             Assert.That(await overview.GetItemNamesAsync(), Is.EquivalentTo(new[] { lowest.Name, lastByName }));
+
             var linePrices = await overview.GetItemPricesAsync();
             var itemTotal = await overview.GetItemTotalAsync();
             var tax = await overview.GetTaxAsync();
@@ -93,13 +92,13 @@ public sealed class PurchaseFlowTests : UiTestBase
                 Assert.That(itemTotal, Is.EqualTo(linePrices.Sum()), "item total = sum of line prices");
                 Assert.That(total, Is.EqualTo(itemTotal + tax), "total = item total + tax");
             });
-            complete = await overview.FinishAsync();
+            return await overview.FinishAsync();
         });
 
         await Step("8. Verify the order is placed", async () =>
         {
             await Expect(complete.ConfirmationHeader).ToHaveTextAsync("Thank you for your order!");
-            await Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("checkout-complete"));
+            await Expect(Page).ToHaveURLAsync(new Regex("checkout-complete"));
         });
 
         await Step("9. Verify the cart is empty", async () =>

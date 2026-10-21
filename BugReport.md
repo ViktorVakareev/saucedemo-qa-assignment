@@ -64,7 +64,7 @@ Tax and Total are correct and correctly formatted; only **Item total** is wrong.
 
 **Not every cart shows the defect, and the same products can show it or not depending on the order they were added.** The four products in row 3 display `$105.96` when the Fleece Jacket is added first. Added as Backpack, Bike Light, Bolt T-Shirt, Fleece Jacket, the floating-point sum is `105.96000000000001`. A retest with one "clean" cart therefore proves nothing; retest with the carts in rows 1–2.
 
-**Tax and Total are correct in every case checked.** Tax = Item total × 8%, rounded to cents; Total = Item total + Tax. That holds in all four screenshots, and in a simulation of the site's calculation over every combination and order of the 6 products (1,956 carts), compared with exact decimal arithmetic. The 8% rate itself isn't stated anywhere on the site; it's inferred from the numbers and should be confirmed with the product owner.
+**Tax and Total are correct in every case checked.** Tax = Item total × 8%, rounded to cents; Total = Item total + Tax. That holds in all four screenshots, and in a replay of the site's calculation over every combination and order of the 6 products (1,956 carts), compared with exact decimal arithmetic: [`PriceSummaryArithmeticTests`](src/SauceDemo.UiTests/Tests/Unit/PriceSummaryArithmeticTests.cs) (run with `dotnet test --filter TestCategory=Unit`). The same replay shows the noisy Item total for 556 of the 1,956 carts. The 8% rate itself isn't stated anywhere on the site; it's inferred from the numbers and should be confirmed with the product owner.
 
 ### Likely cause (for the developer, not verified in the source repository)
 

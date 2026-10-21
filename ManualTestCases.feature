@@ -63,11 +63,13 @@ Feature: Purchase flow on SauceDemo
   # ---------------------------------------------------------------- edge case
   @edge @cart @checkout
   Scenario: An order cannot be placed with an empty cart
-    # Edge of the cart: zero items. Assumption (no spec): an empty order shouldn't be possible.
+    # Boundary of the cart: zero items. No spec exists, so the expected result is an assumption
+    # (common e-commerce behaviour) to confirm with the product owner. Today this fails: see O-2 in BugReport.md.
     Given I am logged in as "standard_user"
     And my cart is empty
     When I open the cart
     Then the cart shows no items
-    And "Checkout" is disabled, or checking out shows a message that the cart is empty
-    And no "Checkout: Overview" with "Item total: $0" is shown
-    And no order confirmation is shown
+    And the "Checkout" button is disabled
+    When I open "/checkout-step-one.html" directly
+    Then I am returned to the cart
+    And no order confirmation can be reached

@@ -42,7 +42,7 @@ public abstract class UiTestBase : PageTest
         {
             var dir = Path.Combine(TestContext.CurrentContext.WorkDirectory, "playwright-traces");
             Directory.CreateDirectory(dir);
-            path = Path.Combine(dir, $"{TestContext.CurrentContext.Test.Name}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.zip");
+            path = Path.Combine(dir, $"{SafeFileName(TestContext.CurrentContext.Test.Name)}-{DateTime.UtcNow:yyyyMMdd-HHmmss}.zip");
         }
 
         await Context.Tracing.StopAsync(new() { Path = path });   // null path = discard the trace
@@ -55,5 +55,20 @@ public abstract class UiTestBase : PageTest
     {
         TestContext.Progress.WriteLine($"STEP: {name}");
         await action();
+    }
+
+    /// <summary>A named step that hands its result to the next step (the page it ended on, the products it picked).</summary>
+    protected static async Task<T> Step<T>(string name, Func<Task<T>> action)
+    {
+        TestContext.Progress.WriteLine($"STEP: {name}");
+        return await action();
+    }
+
+    // Parameterised test names contain quotes, colons and commas, which Windows doesn't allow in file names.
+    private static string SafeFileName(string testName)
+    {
+        var invalid = Path.GetInvalidFileNameChars().Concat(new[] { '"', ':', ',', '(', ')', ' ' }).ToHashSet();
+        var safe = new string(testName.Select(c => invalid.Contains(c) ? '_' : c).ToArray());
+        return safe.Length <= 100 ? safe : safe[..100];
     }
 }
