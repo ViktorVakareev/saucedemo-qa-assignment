@@ -1,0 +1,84 @@
+name: UI tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PLAYWRIGHT_SKIP_INSTALL: "1"          # browsers installed by the step below
+      # Optional overrides from repository secrets; when empty the tests read the login page.
+      SAUCEDEMO_USERNAME: ${{ secrets.SAUCEDEMO_USERNAME }}
+      SAUCEDEMO_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build src/SauceDemo.UiTests --configuration Release
+
+      - name: Install Chromium and its system dependencies
+        run: pwsh src/SauceDemo.UiTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Test (known defects excluded from the gate)
+        run: >
+          dotnet test src/SauceDemo.UiTests --configuration Release --no-build
+          --filter "TestCategory!=KnownDefect"
+          --logger "trx;LogFileName=results.trx"
+          --results-directory TestResults
+
+      - name: Upload results and failure traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            TestResults/
+            src/SauceDemo.UiTests/bin/Release/net10.0/playwright-traces/
+          if-no-files-found: ignore
+
+  # Reproduces the reported bugs (BugReport.md). Expected to fail until they're fixed, so it never blocks
+  # the pipeline; its value is the evidence: results and Playwright traces for each defect.
+  known-defects:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    continue-on-error: true
+    env:
+      PLAYWRIGHT_SKIP_INSTALL: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build
+        run: dotnet build src/SauceDemo.UiTests --configuration Release
+
+      - name: Install Chromium and its system dependencies
+        run: pwsh src/SauceDemo.UiTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+
+      - name: Run known-defect tests
+        run: >
+          dotnet test src/SauceDemo.UiTests --configuration Release --no-build
+          --filter "TestCategory=KnownDefect"
+          --logger "trx;LogFileName=known-defects.trx"
+          --results-directory TestResults
+
+      - name: Upload defect evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: known-defect-evidence
+          path: |
+            TestResults/
+            src/SauceDemo.UiTests/bin/Release/net10.0/playwright-traces/
+          if-no-files-found: ignore
