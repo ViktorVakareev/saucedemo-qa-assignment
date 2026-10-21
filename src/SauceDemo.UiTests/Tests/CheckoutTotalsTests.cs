@@ -20,6 +20,7 @@ public sealed class CheckoutTotalsTests : UiTestBase
         await inventory.AddToCartAsync("Sauce Labs Fleece Jacket");  // $49.99
 
         var cart = await inventory.Header.OpenCartAsync();
+        await Expect(cart.Items).ToHaveCountAsync(2);
         var overview = await (await cart.CheckoutAsync()).ContinueAsync(CheckoutCustomer.Load());
 
         await Expect(overview.ItemTotalLabel).ToHaveTextAsync("Item total: $59.98");

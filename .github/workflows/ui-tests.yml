@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned: the environment changes only when we decide
     timeout-minutes: 20
     env:
       PLAYWRIGHT_SKIP_INSTALL: "1"          # browsers installed by the step below
@@ -16,9 +16,9 @@ jobs:
       SAUCEDEMO_USERNAME: ${{ secrets.SAUCEDEMO_USERNAME }}
       SAUCEDEMO_PASSWORD: ${{ secrets.SAUCEDEMO_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -37,7 +37,7 @@ jobs:
 
       - name: Upload results and failure traces
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-results
           path: |
@@ -48,15 +48,14 @@ jobs:
   # Reproduces the reported bugs (BugReport.md). Expected to fail until they're fixed, so it never blocks
   # the pipeline; its value is the evidence: results and Playwright traces for each defect.
   known-defects:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # pinned: the environment changes only when we decide
     timeout-minutes: 15
-    continue-on-error: true
     env:
       PLAYWRIGHT_SKIP_INSTALL: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
 
@@ -66,7 +65,8 @@ jobs:
       - name: Install Chromium and its system dependencies
         run: pwsh src/SauceDemo.UiTests/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
 
-      - name: Run known-defect tests
+      - name: Run known-defect tests (expected to fail until the bugs are fixed)
+        continue-on-error: true      # step level: the job stays green, the step shows the failures
         run: >
           dotnet test src/SauceDemo.UiTests --configuration Release --no-build
           --filter "TestCategory=KnownDefect"
@@ -75,7 +75,7 @@ jobs:
 
       - name: Upload defect evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: known-defect-evidence
           path: |
