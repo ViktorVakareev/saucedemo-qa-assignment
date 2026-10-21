@@ -2,7 +2,7 @@ namespace SauceDemo.UiTests.Config;
 
 /// <summary>
 /// Parses the credential hints SauceDemo shows on its login page, for example:
-/// "Accepted usernames are:\nstandard_user\nlocked_out_user ..." and "Password for all users:\nsecret_sauce".
+/// "Accepted usernames are:\nstandard_user\nlocked_out_user ..." and "Password for all users:\n" followed by the password.
 /// Pure functions, so they're unit-tested without a browser.
 /// </summary>
 public static class CredentialsParser

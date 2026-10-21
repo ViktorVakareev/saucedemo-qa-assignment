@@ -4,7 +4,7 @@ public sealed class CartPage(IPage page)
 {
     public ILocator Items => page.Locator("[data-test='inventory-item']");
     private ILocator ItemNames => page.Locator("[data-test='inventory-item-name']");
-    private ILocator CheckoutButton => page.Locator("[data-test='checkout']");
+    public ILocator CheckoutButton => page.Locator("[data-test='checkout']");
     private ILocator ContinueShoppingButton => page.Locator("[data-test='continue-shopping']");
 
     public HeaderComponent Header => new(page);
