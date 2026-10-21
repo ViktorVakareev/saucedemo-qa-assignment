@@ -1,5 +1,7 @@
 # SauceDemo QA assignment: manual tests, bug report and Playwright UI automation (C#)
 
+[![UI tests](https://github.com/ViktorVakareev/saucedemo-qa-assignment/actions/workflows/ui-tests.yml/badge.svg)](https://github.com/ViktorVakareev/saucedemo-qa-assignment/actions/workflows/ui-tests.yml)
+
 Solution to the QA Engineer homework on [SauceDemo](https://www.saucedemo.com/).
 
 | Part | Deliverable |
@@ -31,7 +33,7 @@ Local run (Windows, .NET 10, Chromium): 21 tests passed, known defects excluded;
 
 ![Local test run: 21 passed](docs/test-run-local.png)
 
-When a UI test fails, a Playwright trace is saved under `bin/<config>/net10.0/playwright-traces/` and attached to the test result. Open it with `pwsh bin/Debug/net10.0/playwright.ps1 show-trace <file>` or at [trace.playwright.dev](https://trace.playwright.dev).
+When a UI test fails, a Playwright trace is saved under `src/SauceDemo.UiTests/bin/<config>/net10.0/playwright-traces/` and attached to the test result. Open it by dropping the `.zip` on [trace.playwright.dev](https://trace.playwright.dev) (runs in the browser, the file isn't uploaded), or with `pwsh bin/Debug/net10.0/playwright.ps1 show-trace <file>` if PowerShell 7 is installed.
 
 ## Credentials: "prone to change"
 
@@ -63,6 +65,7 @@ Extra tests:
 - `LoginFormTests`: required fields, wrong password, locked-out user, dismissing the error, masked password.
 - `CheckoutTotalsTests`: reproduces BUG-001.
 - `ParsingTests`: credentials and money parsing.
+- `PriceSummaryArithmeticTests`: replays the site's price arithmetic for all 1,956 carts; backs the tax and add-order analysis in BUG-001.
 
 ## Design
 
@@ -72,13 +75,14 @@ src/SauceDemo.UiTests/
   Pages/           page objects: Login, Inventory, Cart, Checkout (3 steps), Header (cart + menu)
   Models/          Product, money parsing
   Infrastructure/  UiTestBase (context options, timeouts, trace on failure), browser install fixture
-  Tests/           PurchaseFlowTests, LoginFormTests, CheckoutTotalsTests, Unit/ParsingTests
+  Tests/           PurchaseFlowTests, LoginFormTests, CheckoutTotalsTests, Unit/ParsingTests, Unit/PriceSummaryArithmeticTests
   TestData/        checkout-customer.json
 ```
 
 - **Page objects return the next page** (`cart.CheckoutAsync()` returns the information page), so the test reads like the user journey and the compiler stops impossible flows.
 - **Locators use `data-test` attributes** (stable, made for testing) and accessible roles for buttons ("Add to cart", "Remove"), all kept inside page objects. Products are found by their exact name, never by position.
-- **Playwright's web-first assertions** (`Expect(...).ToHaveTextAsync`) wait for the UI, so there are no sleeps.
+- **Playwright's web-first assertions** (`Expect(...).ToHaveTextAsync`, `ToHaveCountAsync`) wait for the UI, so there are no sleeps. Plain reads like `AllInnerTextsAsync()` don't wait, so every read is preceded by an assertion that the expected content is there (the first CI run caught one place where it wasn't).
+- **Each step hands its result to the next** (`Step<T>`): the page it ended on, the products it picked. No shared mutable fields, no `null!` placeholders.
 - **Each test gets a new browser context**: no shared cart or login state between tests, which also makes them safe to run in parallel.
 - **Configuration, test data and secrets are separate from code**: base URL and timeouts in `appsettings.json`, customer data in `TestData/`, credentials from env or the page.
 - **Known defects are tests too**, in the `KnownDefect` category: they document the bug and turn green when it's fixed, without blocking the pipeline meanwhile.
